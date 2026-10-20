@@ -8,3 +8,12 @@ test('audio forwards byte ranges and streams a seekable partial MP3 response',as
 test('audio handles Google confirmation and never serves an HTML error as MP3',async()=>{const original=fetch;let calls=0;global.fetch=async()=>{calls++;return calls===1?new Response('<form id="download-form" action="https://drive.usercontent.google.com/download"><input name="id" value="track_A123456789"><input name="confirm" value="t"></form>',{headers:{'content-type':'text/html'}}):new Response('quota exceeded',{headers:{'content-type':'text/html'}});};try{const res=new ResponseMock();await audio({method:'GET',query:{id:'track_A123456789'},headers:{}},res);assert.equal(calls,2);assert.equal(res.statusCode,502);assert.match(res.payload.error,/not serving audio/);}finally{global.fetch=original;}});
 test('folder import returns actionable errors for private or empty folders',async()=>{const original=fetch;global.fetch=async()=>new Response('<html><title>Sign in</title></html>');try{const res=new ResponseMock();await drive({method:'GET',query:{url:'https://drive.google.com/drive/folders/folder123456789'}},res);assert.equal(res.statusCode,400);assert.match(res.payload.error,/Anyone with the link/);}finally{global.fetch=original;}});
 test('invalid audio IDs and multi-range requests are rejected before fetching',async()=>{const res=new ResponseMock();await audio({method:'GET',query:{id:'../../etc/passwd'},headers:{}},res);assert.equal(res.statusCode,400);const res2=new ResponseMock();await audio({method:'GET',query:{id:'track_A123456789'},headers:{range:'bytes=0-1,2-3'}},res2);assert.equal(res2.statusCode,416);});
+
+test('refresh accepts a confirmed empty public folder without treating a sign-in page as empty',async()=>{
+ const original=fetch;try{
+  global.fetch=async()=>new Response('<html><title>Empty album</title><body class="flip-embedded"></body></html>');
+  const res=new ResponseMock();await drive({method:'GET',query:{url:'https://drive.google.com/drive/folders/folder123456789',refresh:'1'}},res);assert.equal(res.statusCode,200);assert.deepEqual(res.payload.tracks,[]);
+  global.fetch=async()=>new Response('<html><title>Sign in</title><body></body></html>');
+  const denied=new ResponseMock();await drive({method:'GET',query:{url:'https://drive.google.com/drive/folders/folder123456789',refresh:'1'}},denied);assert.equal(denied.statusCode,400);
+ }finally{global.fetch=original;}
+});
