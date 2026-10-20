@@ -3,16 +3,19 @@ export const storageKey=id=>'trklst:project:'+id;
 export function readLocal(key,storage){try{return JSON.parse((storage||globalThis.localStorage).getItem(key));}catch{return null;}}
 export function readSession(hash,storage){
  try{
+  if(hash.startsWith('#artist='))return {project:null,listener:false,artistLocked:{token:hash.slice(8)},error:''};
   if(hash.startsWith('#locked='))return {project:null,listener:true,locked:hash.slice(8),error:''};
   if(hash.startsWith('#listen='))return {project:decodeProject(hash.slice(8)),listener:true,error:''};
   if(hash.startsWith('#edit=')){
    const id=hash.slice(6);if(!/^[\w-]{1,80}$/.test(id))throw Error('Invalid artist link.');
    const p=readLocal(storageKey(id),storage);
    if(!p)throw Error('This artist link opens a project saved in its original browser. Open it on that browser, or use an artist transfer link to bring a copy here.');
+   if(p.artistEncrypted===1)return {project:null,listener:false,artistLocked:{id,token:p.token},error:''};
    return {project:validateProject(p),listener:false,error:''};
   }
   if(hash.startsWith('#p=')){
    const shared=decodeProject(hash),cached=readLocal(storageKey(shared.id),storage);
+   if(cached?.artistEncrypted===1)return {project:null,listener:false,artistLocked:{id:shared.id,token:cached.token},error:''};
    let project=shared;try{if(cached&&cached.updated>shared.updated)project=validateProject(cached);}catch{}
    return {project,listener:false,error:''};
   }
@@ -51,5 +54,10 @@ export async function unlockSession(token,password){
   if(salt.length!==16||iv.length!==12)throw Error();
   const key=await keyFor(password,salt,['decrypt']);
   return decodeProject(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv},key,cipher)));
- }catch{throw Error('The password is incorrect or this listening link is incomplete.');}
+ }catch{throw Error('The password is incorrect or this link is incomplete.');}
+}
+
+export async function artistRecord(project,password){
+ validateProject(project);
+ return password?{artistEncrypted:1,token:await lockSession(project,password)}:project;
 }

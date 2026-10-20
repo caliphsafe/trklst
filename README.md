@@ -2,7 +2,7 @@
 A public Google Drive MP3 listening room built with React, Vite, dnd-kit and stateless Vercel functions. No database, account system, additional storage service, or Google API key. Audio stays in Drive.
 
 ## Artist workflow
-Paste a public Drive folder link, enter artist/project details, and optionally choose artwork. Drag the grip handles (touch-and-hold on phones), use keyboard Space/arrow keys, or use up/down buttons to arrange tracks. Playback follows the current sequence.
+Paste a public Drive folder link, enter artist/project details, and optionally choose artwork. Drag the grip handles (touch-and-hold on phones), use keyboard Space/arrow keys to arrange tracks. Playback follows the current sequence.
 
 Edits autosave to **localStorage in the current browser**. The stable artist link uses `#edit=project-id` and always opens the latest local save on that browser. No project file is uploaded or written to Drive. The artist must keep the same browser and site origin. Clearing browser data, private-mode session expiration, or changing devices loses access to device-only edits. Save status reports local save failures. “Transfer copy” creates an editable snapshot link for another device; those copies do not synchronize. Legacy `#p=` links still load and migrate to the stable local link after saving.
 
@@ -37,3 +37,8 @@ Node 22+. `npm install`, `npm test`, `npm run build`. No package-lock.json; .npm
 Google's anonymous embedded folder HTML is not a guaranteed API contract and may need maintenance. Download permissions, quotas, sign-in requirements and network errors are handled explicitly. Transient import failures get one retry. The serverless proxy stores no audio but uses hosting bandwidth/function time.
 
 The provided FREE LIIPH folder was successfully imported and actual MP3 playback was observed before this release. Regression tests cover local links, listener isolation, refresh reconciliation, encrypted link authentication, network retries, empty folders and audio ranges. This release's browser/touch interactions still need device verification if the execution/browser environment is unavailable.
+
+## Artist passwords and simplified playback
+Optional artist passwords are offered at creation and under Artist password on the tracklisting page. The saved local project and named versions are encrypted with the same Web Crypto scheme as listener links. Reloading or using Lock requires the password again. Passwords stay only in memory during an unlocked session. Changing/removing the password rewrites the local record; protected transfer copies are encrypted as well. Legacy plaintext snapshots already copied elsewhere cannot be revoked. Public Drive files are unchanged. There is no password recovery.
+
+The listener view shows artwork, artist, project title, track count, playback, and an icon-only refresh control. The player is a compact floating card on desktop and mobile. Visual up/down reorder buttons are removed; grip dragging and keyboard grip controls remain.

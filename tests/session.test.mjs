@@ -48,3 +48,18 @@ test('failed network retries are bounded and empty refresh results are permitted
  let calls=0;await assert.rejects(()=>importFolder(p.folder,{retryDelayMs:0,fetcher:async()=>{calls++;throw new TypeError('Load failed');}}),/two attempts/);assert.equal(calls,2);
  assert.deepEqual((await importFolder(p.folder,{refresh:true,fetcher:async()=>new Response(JSON.stringify({tracks:[]}),{headers:{'content-type':'application/json'}})})).tracks,[]);
 });
+
+test('artist passwords encrypt local drafts and versions, and reopening requires unlock',async()=>{
+ const {artistRecord}=await import('../src/session.mjs');
+ const draft={...p,localVersions:[{id:'version-1',name:'Private draft order',at:1,tracks:[a,b]}]};
+ const record=await artistRecord(draft,'artist test password');
+ assert.equal(record.artistEncrypted,1);assert.ok(!JSON.stringify(record).includes('Private draft order'));
+ const local={getItem:key=>key===storageKey(p.id)?JSON.stringify(record):null};
+ const initial=readSession('#edit='+p.id,local);assert.equal(initial.project,null);assert.equal(initial.listener,false);assert.equal(initial.artistLocked.token,record.token);
+ assert.deepEqual(await unlockSession(record.token,'artist test password'),draft);
+ await assert.rejects(()=>unlockSession(record.token,'wrong password'));
+ const legacy=readSession('#p='+encodeProject(p),local);assert.equal(legacy.project,null);assert.ok(legacy.artistLocked);
+ const transfer=readSession('#artist='+record.token,local);assert.equal(transfer.project,null);assert.ok(transfer.artistLocked);
+ const changed=await artistRecord(draft,'replacement password');await assert.rejects(()=>unlockSession(changed.token,'artist test password'));
+ assert.deepEqual(await artistRecord(draft,''),draft);
+});
