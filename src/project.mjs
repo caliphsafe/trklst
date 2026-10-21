@@ -12,6 +12,7 @@ export function folderFromLink(value) {
 export function validateProject(p) {
   if (!p || p.v !== 1 || typeof p.id !== 'string' || !/^[\w-]{1,80}$/.test(p.id) || !Number.isFinite(p.updated)) throw new Error('This project link is not valid.');
   if (typeof p.artist !== 'string' || p.artist.length > 100 || typeof p.title !== 'string' || p.title.length > 100) throw new Error('Invalid project details.');
+  if(p.transitionSeconds!==undefined&&(!Number.isInteger(p.transitionSeconds)||Math.abs(p.transitionSeconds)>5))throw new Error('Invalid track transition.');
   folderFromLink(p.folder);
   if (!Array.isArray(p.tracks) || p.tracks.length > MAX_TRACKS || new Set(p.tracks.map(t=>t.id)).size !== p.tracks.length) throw new Error('Invalid track list.');
   for (const t of p.tracks) if (!idPattern.test(t.id) || typeof t.name !== 'string' || t.name.length > 500 || (t.key && !idPattern.test(t.key))) throw new Error('Invalid track details.');

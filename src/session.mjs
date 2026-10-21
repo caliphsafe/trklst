@@ -30,7 +30,7 @@ export function mergeDriveTracks(previous,incoming,{listener=false,followDrive=f
 }
 export function sessionPayload(project,order='snapshot'){
  const p=validateProject(project);
- return {v:1,id:p.id,artist:p.artist,title:p.title,folder:p.folder,cover:p.cover||'',tracks:p.tracks.map(({id,name,key,missing})=>({id,name,key:key||'',missing:!!missing})),updated:p.updated,listenOrder:order};
+ return {v:1,id:p.id,artist:p.artist,title:p.title,folder:p.folder,cover:p.cover||'',tracks:p.tracks.map(({id,name,key,missing})=>({id,name,key:key||'',missing:!!missing})),updated:p.updated,transitionSeconds:p.transitionSeconds||0,listenOrder:order};
 }
 function b64(bytes){let str='';for(const b of new Uint8Array(bytes))str+=String.fromCharCode(b);return btoa(str).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');}
 function unb64(str){if(!/^[A-Za-z0-9_-]+$/.test(str))throw Error('Invalid encrypted link.');return Uint8Array.from(atob(str.replaceAll('-','+').replaceAll('_','/')),c=>c.charCodeAt(0));}

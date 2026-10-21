@@ -63,3 +63,13 @@ test('artist passwords encrypt local drafts and versions, and reopening requires
  const changed=await artistRecord(draft,'replacement password');await assert.rejects(()=>unlockSession(changed.token,'artist test password'));
  assert.deepEqual(await artistRecord(draft,''),draft);
 });
+
+test('transition timing survives artist and listener links and rejects invalid values',()=>{
+ for(let n=-5;n<=5;n++){
+  const project={...p,transitionSeconds:n};
+  assert.equal(readSession('#p='+encodeProject(project),{getItem:()=>null}).project.transitionSeconds,n);
+  assert.equal(readSession('#listen='+encodeProject(sessionPayload(project))).project.transitionSeconds,n);
+ }
+ assert.equal(sessionPayload(p).transitionSeconds,0);
+ for(const value of [-6,6,1.5,'-3',null])assert.throws(()=>validateProject({...p,transitionSeconds:value}));
+});
