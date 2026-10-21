@@ -9,7 +9,7 @@ export async function importFolder(folder,{refresh=false,fetcher=fetch,onRetry=(
    if([408,429,500,502,503,504].includes(r.status)){if(!attempt){onRetry();continue;}throw Error('The import service is temporarily unavailable. Your saved sequence is unchanged. Try again shortly.');}
    if(!r.headers.get('content-type')?.includes('application/json'))throw Error('The import service returned a page instead of tracks. Open trklst.vercel.app directly and try again.');
    const result=await r.json();if(!r.ok)throw Error(result.error||'Could not read this folder.');
-   if(!Array.isArray(result.tracks)||(!refresh&&!result.tracks.length))throw Error('No MP3 tracks were returned.');
+   if(!Array.isArray(result.tracks)||(!refresh&&!result.tracks.length))throw Error('No audio tracks were returned.');
    return result;
   }catch(e){
    if(!(e instanceof TypeError)&&e.name!=='AbortError')throw e;

@@ -17,3 +17,17 @@ test('refresh accepts a confirmed empty public folder without treating a sign-in
   const denied=new ResponseMock();await drive({method:'GET',query:{url:'https://drive.google.com/drive/folders/folder123456789',refresh:'1'}},denied);assert.equal(denied.statusCode,400);
  }finally{global.fetch=original;}
 });
+
+test('WAV and M4A streams retain byte ranges and use playable MIME types',async()=>{
+ const original=fetch;
+ try{
+  for(const [format,upstream,expected] of [['wav','audio/wav','audio/wav'],['wav','application/octet-stream','audio/wav'],['m4a','audio/mp4','audio/mp4'],['m4a','application/octet-stream','audio/mp4'],['m4a','video/mp4','audio/mp4'],['m4a','application/mp4','audio/mp4']]){
+   global.fetch=async(_,options)=>{assert.equal(options.headers.Range,'bytes=4-7');return new Response(new Uint8Array([1,2,3,4]),{status:206,headers:{'content-type':upstream,'content-range':'bytes 4-7/100','content-length':'4','accept-ranges':'bytes'}});};
+   const res=new ResponseMock();await audio({method:'GET',query:{id:'track_A123456789',format},headers:{range:'bytes=4-7'}},res);
+   assert.equal(res.statusCode,206);assert.equal(res.headers['content-type'],expected);assert.equal(res.headers['content-range'],'bytes 4-7/100');assert.equal(Buffer.concat(res.parts).length,4);
+  }
+  global.fetch=async()=>new Response('not audio',{headers:{'content-type':'text/plain'}});
+  const denied=new ResponseMock();await audio({method:'GET',query:{id:'track_A123456789',format:'m4a'},headers:{}},denied);assert.equal(denied.statusCode,502);
+  const invalid=new ResponseMock();await audio({method:'GET',query:{id:'track_A123456789',format:'html'},headers:{}},invalid);assert.equal(invalid.statusCode,400);
+ }finally{global.fetch=original;}
+});

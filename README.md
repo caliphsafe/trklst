@@ -1,5 +1,5 @@
 # TRKLST
-A public Google Drive MP3 listening room built with React, Vite, dnd-kit and stateless Vercel functions. No database, account system, additional storage service, or Google API key. Audio stays in Drive.
+A public Google Drive MP3, WAV, and M4A listening room built with React, Vite, dnd-kit and stateless Vercel functions. No database, account system, additional storage service, or Google API key. Audio stays in Drive.
 
 ## Artist workflow
 Paste a public Drive folder link, enter artist/project details, and optionally choose artwork. Drag the grip handles (touch-and-hold on phones), use keyboard Space/arrow keys to arrange tracks. Playback follows the current sequence.
@@ -14,7 +14,7 @@ Refreshing changes the audio request revision so the next playback loads current
 ## Listener links
 “Share listening session” offers:
 - **This exact sequence**: a compressed snapshot of the artist's current order/details/artwork. Later local artist edits cannot propagate to this link. Drive names, availability, and same-ID audio replacements refresh; new files are not added to a published snapshot.
-- **Follow current Drive filenames**: a stable link that reloads all current folder MP3s in natural filename order. Rename files with 01, 02, 03 prefixes in Google Drive to control this order. It does not follow local drag-and-drop edits. Artist/title/artwork remain as shared.
+- **Follow current Drive filenames**: a stable link that reloads all current folder audio files in natural filename order. Rename files with 01, 02, 03 prefixes in Google Drive to control this order. It does not follow local drag-and-drop edits. Artist/title/artwork remain as shared.
 
 Listeners have playback controls and Drive refresh, with no edit, reorder, version, or artist-share controls. Listener sessions do not overwrite artist localStorage or read a newer local artist draft. They refresh every minute while visible, on page reload, and manually. This is a read-only presentation, not DRM: recipients can copy public audio or build their own separate project.
 
@@ -27,7 +27,7 @@ This encrypts **the link's project details**, not the already-public Drive files
 Save and restore up to 12 named sequence versions locally. Restore keeps current filenames/availability and appends new files. Versions do not synchronize. Configurable 0/1/2/3/5-second listening gaps, repeat, previous/next, seeking, undo, and text export are included. Mobile autoplay policies can require tapping Play after a delayed transition. No additional silence is added by default.
 
 ## Limits
-100 tracks per project; MP3s directly in the folder, no subfolder recursion. Artwork is a compact 192px JPEG carried in transfer/listener links. Links may be long; some messaging services truncate them.
+100 tracks per project; MP3, WAV, and M4A files directly in the folder, no subfolder recursion. Artwork is a compact 192px JPEG carried in transfer/listener links. Links may be long; some messaging services truncate them.
 
 Without shared writable storage, the app cannot synchronize arbitrary drag-and-drop changes to existing listener links, synchronize artist edits across devices, revoke already-issued links/passwords, collect shared listener feedback, or enforce server-side expiry. It does not claim otherwise.
 
@@ -52,3 +52,5 @@ Each song also has a **Starts** menu on the tracklisting page: use the project d
 Successful Drive refreshes remove deleted songs entirely, including from older artist projects, listener snapshots, and saved sequence versions. Confirmed empty folders clear the list. Failed refreshes preserve the existing playlist. Refresh also clears undo history so deleted files cannot be brought back by Undo.
 
 Recent project cards show their last edit date and time in the viewer’s local timezone. Opening a project and background/manual Drive refreshes preserve that timestamp; artist edits update it.
+
+WAV and M4A files are imported alongside MP3s, with case-insensitive extensions. The streaming proxy preserves audio MIME types, uses the filename format for generic binary responses, and supports Drive MP4 container headers for M4A. Byte-range requests remain supported. Playback depends on the browser supporting the codec inside the file; no transcoding or additional file storage is used. Larger WAV files may take longer to buffer.

@@ -1,3 +1,4 @@
+import {audioFormat} from './audio-formats.mjs';
 import LZString from 'lz-string';
 export const MAX_TRACKS = 100;
 const idPattern = /^[\w-]{10,150}$/;
@@ -29,7 +30,7 @@ export function decodeProject(hash) {
 }
 export function moveTrack(tracks, from, to) { const copy = [...tracks]; if (from < 0 || to < 0 || from >= copy.length || to >= copy.length) return tracks; copy.splice(to, 0, copy.splice(from, 1)[0]); return copy; }
 export function nextTrack(tracks, currentId, repeat = false) { const index = tracks.findIndex(t=>t.id === currentId); return tracks.slice(index+1).find(t=>!t.missing) || (repeat ? tracks.find(t=>!t.missing) : null); }
-export function audioUrl(track,revision='') { return `/api/audio?id=${encodeURIComponent(track.id)}${track.key ? `&key=${encodeURIComponent(track.key)}` : ''}${revision ? `&v=${encodeURIComponent(revision)}` : ''}`; }
+export function audioUrl(track,revision='') { return `/api/audio?id=${encodeURIComponent(track.id)}${audioFormat(track.name)?`&format=${audioFormat(track.name)}`:''}${track.key ? `&key=${encodeURIComponent(track.key)}` : ''}${revision ? `&v=${encodeURIComponent(revision)}` : ''}`; }
 export function time(value) { if (!Number.isFinite(value)) return '—:—'; return `${Math.floor(value/60)}:${String(Math.floor(value%60)).padStart(2,'0')}`; }
 
 // Timing belongs to the incoming song, wherever it sits in the sequence.
