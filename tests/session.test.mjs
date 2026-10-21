@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {encodeProject,validateProject,nextTrack,audioUrl} from '../src/project.mjs';
+import {encodeProject,validateProject,nextTrack,moveTrack,trackTiming,audioUrl} from '../src/project.mjs';
 import {readSession,storageKey,mergeDriveTracks,sessionPayload,lockSession,unlockSession} from '../src/session.mjs';
 import {importFolder} from '../src/import-folder.mjs';
 const a={id:'track_A123456789',name:'A.mp3',key:''},b={id:'track_B123456789',name:'B.mp3',key:''},c={id:'track_C123456789',name:'C.mp3',key:''};
@@ -15,13 +15,13 @@ test('listener snapshots ignore artist storage and never become editable session
  memory.set(storageKey(p.id),JSON.stringify({...p,title:'Secret newer draft',updated:9}));
  const session=readSession('#listen='+encodeProject(p),storage);assert.equal(session.listener,true);assert.equal(session.project.title,'Album');
 });
-test('Drive refresh preserves order, updates names, flags deletions, and appends new tracks',()=>{
+test('Drive refresh preserves order, updates names, removes deletions, and appends new tracks',()=>{
  const result=mergeDriveTracks(p.tracks,[{...a,name:'A remastered.mp3'},c]);
- assert.deepEqual(result.map(t=>t.id),[b.id,a.id,c.id]);assert.equal(result[0].missing,true);assert.equal(result[1].name,'A remastered.mp3');
+ assert.deepEqual(result.map(t=>t.id),[a.id,c.id]);assert.equal(result[0].missing,false);assert.equal(result[0].name,'A remastered.mp3');
  assert.equal(nextTrack(result,b.id).id,a.id);assert.equal(mergeDriveTracks(result,[a,b,c])[0].missing,false);
 });
 test('snapshot listeners retain published membership; Drive-order sessions follow current folder',()=>{
- const incoming=[a,c];assert.deepEqual(mergeDriveTracks([b,a],incoming,{listener:true}).map(t=>t.id),[b.id,a.id]);
+ const incoming=[a,c];assert.deepEqual(mergeDriveTracks([b,a],incoming,{listener:true}).map(t=>t.id),[a.id]);
  assert.deepEqual(mergeDriveTracks([b,a],incoming,{listener:true,followDrive:true}).map(t=>t.id),[a.id,c.id]);
  assert.equal(mergeDriveTracks([a],[],{listener:true,followDrive:true}).length,0);
  assert.doesNotThrow(()=>validateProject({...p,tracks:[]}));
@@ -72,4 +72,29 @@ test('transition timing survives artist and listener links and rejects invalid v
  }
  assert.equal(sessionPayload(p).transitionSeconds,0);
  for(const value of [-6,6,1.5,'-3',null])assert.throws(()=>validateProject({...p,transitionSeconds:value}));
+});
+
+
+test('individual incoming song timing overrides the default and travels through reorder, refresh, and links',()=>{
+ const project={...p,transitionSeconds:2,tracks:[{...b,transitionSeconds:-3},{...a,transitionSeconds:0},c]};
+ assert.equal(trackTiming(project,project.tracks[0]),-3);assert.equal(trackTiming(project,project.tracks[1]),0);assert.equal(trackTiming(project,c),2);
+ const moved=moveTrack(project.tracks,0,2);assert.equal(moved[2].transitionSeconds,-3);
+ for(const options of [{},{listener:true},{listener:true,followDrive:true}]){
+  const refreshed=mergeDriveTracks(moved,[{...b,name:'Renamed.mp3'},a,c],options);
+  assert.equal(refreshed.find(t=>t.id===b.id).transitionSeconds,-3);assert.equal(refreshed.find(t=>t.id===a.id).transitionSeconds,0);
+ }
+ const shared=readSession('#listen='+encodeProject(sessionPayload(project))).project;
+ assert.equal(shared.tracks[0].transitionSeconds,-3);assert.equal(shared.tracks[1].transitionSeconds,0);
+ for(const value of [-6,6,1.5,'-3',null])assert.throws(()=>validateProject({...p,tracks:[{...a,transitionSeconds:value}]}));
+});
+test('old artist and listener snapshots discard deleted songs, including previously missing entries',()=>{
+ const legacy={...p,tracks:[{...b,missing:true},a]};
+ for(const hash of ['#p=','#listen=']){
+  const opened=readSession(hash+encodeProject(legacy),{getItem:()=>null});
+  const refreshed=mergeDriveTracks(opened.project.tracks,[a],{listener:opened.listener});
+  assert.deepEqual(refreshed.map(t=>t.id),[a.id]);
+  assert.deepEqual(mergeDriveTracks(opened.project.tracks,[],{listener:opened.listener}),[]);
+ }
+ // Restoring an older sequence must not reintroduce deleted tracks.
+ assert.deepEqual(mergeDriveTracks([b,a],[a,c]).map(t=>t.id),[a.id,c.id]);
 });

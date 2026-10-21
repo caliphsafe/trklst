@@ -16,6 +16,7 @@ export function validateProject(p) {
   folderFromLink(p.folder);
   if (!Array.isArray(p.tracks) || p.tracks.length > MAX_TRACKS || new Set(p.tracks.map(t=>t.id)).size !== p.tracks.length) throw new Error('Invalid track list.');
   for (const t of p.tracks) if (!idPattern.test(t.id) || typeof t.name !== 'string' || t.name.length > 500 || (t.key && !idPattern.test(t.key))) throw new Error('Invalid track details.');
+  for(const t of p.tracks)if(t.transitionSeconds!==undefined&&(!Number.isInteger(t.transitionSeconds)||Math.abs(t.transitionSeconds)>5))throw new Error('Invalid song transition.');
   if (p.cover && (typeof p.cover !== 'string' || p.cover.length > 18000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.cover))) throw new Error('Invalid cover artwork.');
   return p;
 }
@@ -30,3 +31,6 @@ export function moveTrack(tracks, from, to) { const copy = [...tracks]; if (from
 export function nextTrack(tracks, currentId, repeat = false) { const index = tracks.findIndex(t=>t.id === currentId); return tracks.slice(index+1).find(t=>!t.missing) || (repeat ? tracks.find(t=>!t.missing) : null); }
 export function audioUrl(track,revision='') { return `/api/audio?id=${encodeURIComponent(track.id)}${track.key ? `&key=${encodeURIComponent(track.key)}` : ''}${revision ? `&v=${encodeURIComponent(revision)}` : ''}`; }
 export function time(value) { if (!Number.isFinite(value)) return '—:—'; return `${Math.floor(value/60)}:${String(Math.floor(value%60)).padStart(2,'0')}`; }
+
+// Timing belongs to the incoming song, wherever it sits in the sequence.
+export function trackTiming(project,track){return track?.transitionSeconds ?? project?.transitionSeconds ?? 0;}

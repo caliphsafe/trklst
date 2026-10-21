@@ -23,14 +23,16 @@ export function readSession(hash,storage){
  }catch(e){return {project:null,listener:false,error:e.message};}
 }
 export function mergeDriveTracks(previous,incoming,{listener=false,followDrive=false}={}){
- if(followDrive)return incoming.map(t=>({...t,missing:false}));
+ const timings=new Map(previous.map(t=>[t.id,t.transitionSeconds]));
+ const withTiming=t=>timings.get(t.id)===undefined?t:{...t,transitionSeconds:timings.get(t.id)};
+ if(followDrive)return incoming.map(t=>({...withTiming(t),missing:false}));
  const fresh=new Map(incoming.map(t=>[t.id,t])),known=new Set(previous.map(t=>t.id));
- const tracks=previous.map(t=>fresh.has(t.id)?{...fresh.get(t.id),missing:false}:{...t,missing:true});
+ const tracks=previous.filter(t=>fresh.has(t.id)).map(t=>({...withTiming(fresh.get(t.id)),missing:false}));
  return listener?tracks:tracks.concat(incoming.filter(t=>!known.has(t.id)).map(t=>({...t,missing:false})));
 }
 export function sessionPayload(project,order='snapshot'){
  const p=validateProject(project);
- return {v:1,id:p.id,artist:p.artist,title:p.title,folder:p.folder,cover:p.cover||'',tracks:p.tracks.map(({id,name,key,missing})=>({id,name,key:key||'',missing:!!missing})),updated:p.updated,transitionSeconds:p.transitionSeconds||0,listenOrder:order};
+ return {v:1,id:p.id,artist:p.artist,title:p.title,folder:p.folder,cover:p.cover||'',tracks:p.tracks.map(({id,name,key,missing,transitionSeconds})=>({id,name,key:key||'',missing:!!missing,...(transitionSeconds===undefined?{}:{transitionSeconds})})),updated:p.updated,transitionSeconds:p.transitionSeconds||0,listenOrder:order};
 }
 function b64(bytes){let str='';for(const b of new Uint8Array(bytes))str+=String.fromCharCode(b);return btoa(str).replaceAll('+','-').replaceAll('/','_').replace(/=+$/,'');}
 function unb64(str){if(!/^[A-Za-z0-9_-]+$/.test(str))throw Error('Invalid encrypted link.');return Uint8Array.from(atob(str.replaceAll('-','+').replaceAll('_','/')),c=>c.charCodeAt(0));}

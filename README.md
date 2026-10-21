@@ -44,4 +44,11 @@ Optional artist passwords are offered at creation and under Artist password on t
 The listener view shows artwork, artist, project title, track count, playback, and an icon-only refresh control. The player is a compact floating card on desktop and mobile. Visual up/down reorder buttons are removed; grip dragging and keyboard grip controls remain.
 
 ### Track transitions
-Choose **Track transition** on the artist page: no gap, a 1–5 second delay, or start the next song 1–5 seconds early. Early start overlaps two audio elements at the chosen volume without cutting off the outgoing song or applying a fade. Pause controls both; seeking or manual skipping clears the outgoing tail. The next track is preloaded when possible, and automatic playback follows the current sequence. Streaming/buffering and browser background playback restrictions can affect timing. The setting autosaves with the project and is included in newly created listener links; previously shared snapshots retain their original settings.
+Choose **Default track timing** on the artist page: no gap, a 1–5 second delay, or start the next song 1–5 seconds early. Early start overlaps two audio elements at the chosen volume without cutting off the outgoing song or applying a fade. Pause controls both; seeking or manual skipping clears the outgoing tail. The next track is preloaded when possible, and automatic playback follows the current sequence. Streaming/buffering and browser background playback restrictions can affect timing. The setting autosaves with the project and is included in newly created listener links; previously shared snapshots retain their original settings.
+
+
+Each song also has a **Starts** menu on the tracklisting page: use the project default, no gap, 1–5 seconds early, or 1–5 seconds delayed. Timing belongs to the incoming song and follows its file ID through reordering, Drive refresh, saved versions, and new listener links. The first song starts immediately on manual playback; its timing applies when repeating from the last song.
+
+Successful Drive refreshes remove deleted songs entirely, including from older artist projects, listener snapshots, and saved sequence versions. Confirmed empty folders clear the list. Failed refreshes preserve the existing playlist. Refresh also clears undo history so deleted files cannot be brought back by Undo.
+
+Recent project cards show their last edit date and time in the viewer’s local timezone. Opening a project and background/manual Drive refreshes preserve that timestamp; artist edits update it.
